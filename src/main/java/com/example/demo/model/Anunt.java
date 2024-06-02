@@ -7,6 +7,7 @@ import java.util.List;
 
 @Entity
 @Data
+@Table(name = "anunt", schema = "public")
 public class Anunt {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -17,10 +18,6 @@ public class Anunt {
     @JoinColumn(name = "userId", referencedColumnName = "id")
     private User user;
     private String imagePath1;
-    private String imagePath2;
-    private String imagePath3;
-    private String imagePath4;
-    private String imagePath5;
     private String tip;
     private String rasa;
     private String gen;

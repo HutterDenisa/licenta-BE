@@ -1,13 +1,11 @@
 package com.example.demo.controller;
 
+
 import com.example.demo.exceptions.NoAnuntFoundByIdException;
 import com.example.demo.model.Anunt;
-import com.example.demo.model.TipAnunt;
 import com.example.demo.model.User;
 import com.example.demo.service.AnuntService;
 import com.example.demo.service.UserService;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.FileSystemResource;
@@ -15,6 +13,7 @@ import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -32,10 +31,15 @@ import java.util.List;
 public class AnuntController {
     @Autowired
     private AnuntService anuntService;
+
     @Value("${images.upload.directory}")
     private String uploadDirectory;
+
     @Autowired
     private UserService userService;
+
+    @Autowired
+    private SimpMessagingTemplate messagingTemplate;
 
     @CrossOrigin(origins = "http://localhost:63342")
     @GetMapping
@@ -49,11 +53,16 @@ public class AnuntController {
         return anuntService.getAnuntByName(name);
     }
 
+    @CrossOrigin(origins = "http://localhost:63342")
+    @GetMapping("/roata/{oras}/{gen}/{tip}/{culoare}")
+    public List<Anunt> getAnuntByRoata (@PathVariable String oras, @PathVariable String gen, @PathVariable String tip, @PathVariable String culoare) {
+        return anuntService.getByRoata(oras,gen,tip,culoare);
+    }
 
     @CrossOrigin(origins = "http://localhost:63342")
     @GetMapping("/tip/{tip}")
     public List<Anunt> getAnuntByTipAnunt (@PathVariable String tip) {
-        return anuntService.getByTipAnunt(TipAnunt.valueOf(tip));
+        return anuntService.getByTipAnunt(tip);
     }
 
     @CrossOrigin(origins = "http://localhost:63342")
@@ -75,7 +84,7 @@ public class AnuntController {
         // Încarcă imaginea și returnează-o sub formă de răspuns
         Resource imageResource = new FileSystemResource(imagePath);
         return ResponseEntity.ok()
-                .contentType(MediaType.IMAGE_JPEG) // sau MediaType.IMAGE_PNG, în funcție de tipul imaginilor
+                .contentType(MediaType.IMAGE_PNG) // sau MediaType.IMAGE_PNG, în funcție de tipul imaginilor
                 .body(imageResource);
     }
 
@@ -139,27 +148,21 @@ public class AnuntController {
         }
     }
 
-
     @CrossOrigin(origins = "http://localhost:63342")
-    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping
     public ResponseEntity<Anunt> createAnunt(
-
             @RequestParam("userId") Long userId,
             @RequestParam("title") String title,
-            @RequestPart("tip") String tip,
-            @RequestPart("rasa") String rasa,
-            @RequestPart("gen") String gen,
-            @RequestPart("culoare") String culoare,
-            @RequestPart("varsta") int varsta,
-            @RequestPart("oras") String oras,
-            @RequestPart("adresa") String adresa,
+            @RequestParam("tip") String tip,
+            @RequestParam("rasa") String rasa,
+            @RequestParam("gen") String gen,
+            @RequestParam("culoare") String culoare,
+            @RequestParam("varsta") int varsta,
+            @RequestParam("oras") String oras,
+            @RequestParam("adresa") String adresa,
             @RequestParam("description") String description,
-            @RequestPart("image1") MultipartFile image1,
-            @RequestPart("image2") MultipartFile image2,
-            @RequestPart("image3") MultipartFile image3,
-            @RequestPart("image4") MultipartFile image4,
-            @RequestPart("image5") MultipartFile image5,
-            @RequestPart("tipAnunt") String tipAnunt,
+            @RequestParam("image1") MultipartFile image1,
+            @RequestParam("tipAnunt") String tipAnunt,
             @RequestParam("nrLikes") int nrLikes,
             @RequestParam("likedByCurrentUser") boolean likedByCurrentUser) {
 
@@ -167,21 +170,8 @@ public class AnuntController {
             Anunt anunt = new Anunt();
             anunt.setName(title);
             anunt.setDescription(description);
-
-            // Salvează imaginea și actualizează calea în obiectul Anunt
-            String imagePath1 = saveImage(image1);
-            anunt.setImagePath1(imagePath1);
-            String imagePath2 = saveImage(image2);
-            anunt.setImagePath2(imagePath2);
-            String imagePath3 = saveImage(image3);
-            anunt.setImagePath3(imagePath3);
-            String imagePath4 = saveImage(image4);
-            anunt.setImagePath4(imagePath4);
-            String imagePath5 = saveImage(image5);
-            anunt.setImagePath5(imagePath5);
-
             anunt.setAdresa(adresa);
-            anunt.setTipAnunt(String.valueOf(tipAnunt));
+            anunt.setTipAnunt(tipAnunt);
             anunt.setCuloare(culoare);
             anunt.setGen(gen);
             anunt.setOras(oras);
@@ -189,18 +179,36 @@ public class AnuntController {
             anunt.setVarsta(varsta);
             anunt.setTip(tip);
 
+            // Salvează imaginea și actualizează calea în obiectul Anunt
+            String imagePath1 = saveImage(image1);
+            anunt.setImagePath1(imagePath1);
             User user = userService.getUserById(userId);
             anunt.setNrLikes(nrLikes);
             anunt.setLikedByCurrentUser(likedByCurrentUser);
             anunt.setUser(user);
+            System.out.println(anunt);
 
             // Salvează obiectul Anunt în baza de date
             Anunt savedAnunt = anuntService.saveAnunt(anunt);
 
-            return ResponseEntity.ok()
-                    .header("Access-Control-Allow-Origin", "http://localhost:63342")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .body(savedAnunt);
+            // Verifică anunțurile similare și trimite notificări
+            if (tipAnunt.equals("pierdut")) {
+                List<Anunt> similarAnunturi = anuntService.findSimilarAnunturi("gasit", oras, tip, culoare, gen, rasa);
+                if (!similarAnunturi.isEmpty()) {
+                    for (Anunt similarAnunt : similarAnunturi) {
+                        messagingTemplate.convertAndSend("/topic/notifications", "Anunț similar găsit pentru pierdut: " + similarAnunt.getDescription());
+                    }
+                }
+            } else if (tipAnunt.equals("gasit")) {
+                List<Anunt> similarAnunturi = anuntService.findSimilarAnunturi("pierdut", oras, tip, culoare, gen, rasa);
+                if (!similarAnunturi.isEmpty()) {
+                    for (Anunt similarAnunt : similarAnunturi) {
+                        messagingTemplate.convertAndSend("/topic/notifications", "Anunț similar găsit pentru găsit: " + similarAnunt.getDescription());
+                    }
+                }
+            }
+
+            return ResponseEntity.ok().body(savedAnunt);
         } catch (IOException e) {
             // Tratează eroarea în mod corespunzător
             e.printStackTrace();
@@ -225,6 +233,17 @@ public class AnuntController {
         Files.copy(image.getInputStream(), destination, StandardCopyOption.REPLACE_EXISTING);
 
         return imagePath;
+    }
+
+    // In AnuntController.java
+    @CrossOrigin(origins = "http://localhost:63342")
+    @GetMapping("/search/{name}")
+    public ResponseEntity<List<Anunt>> searchAnuntByName(@PathVariable String name) {
+        List<Anunt> results = anuntService.findByNameContaining(name);
+        if(results.isEmpty()) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+        return new ResponseEntity<>(results, HttpStatus.OK);
     }
 
 }

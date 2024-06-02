@@ -66,7 +66,7 @@ public class UserController {
     }
 
     @DeleteMapping("/id/{id}")
-    public ResponseEntity<Void> deleteUserById (@RequestParam final long id) {
+    public ResponseEntity<Void> deleteUserById (@PathVariable final long id) {
         boolean deleted = userService.deleteUserById(id);
         if (deleted)
             return ResponseEntity.noContent().build();
@@ -74,9 +74,9 @@ public class UserController {
             return ResponseEntity.notFound().build();
     }
 
+
     @PostMapping
     public User createUser(@RequestBody final User user) {
-        System.out.println(user.getEmail());
         return userService.saveUser(user);
     }
 
