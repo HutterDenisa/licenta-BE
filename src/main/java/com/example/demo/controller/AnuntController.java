@@ -25,6 +25,7 @@ import java.nio.file.StandardCopyOption;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/anunt")
@@ -191,21 +192,14 @@ public class AnuntController {
             // Salvează obiectul Anunt în baza de date
             Anunt savedAnunt = anuntService.saveAnunt(anunt);
 
-            // Verifică anunțurile similare și trimite notificări
-            if (tipAnunt.equals("pierdut")) {
-                List<Anunt> similarAnunturi = anuntService.findSimilarAnunturi("gasit", oras, tip, culoare, gen, rasa);
-                if (!similarAnunturi.isEmpty()) {
-                    for (Anunt similarAnunt : similarAnunturi) {
-                        messagingTemplate.convertAndSend("/topic/notifications", "Anunț similar găsit pentru pierdut: " + similarAnunt.getDescription());
-                    }
-                }
-            } else if (tipAnunt.equals("gasit")) {
-                List<Anunt> similarAnunturi = anuntService.findSimilarAnunturi("pierdut", oras, tip, culoare, gen, rasa);
-                if (!similarAnunturi.isEmpty()) {
-                    for (Anunt similarAnunt : similarAnunturi) {
-                        messagingTemplate.convertAndSend("/topic/notifications", "Anunț similar găsit pentru găsit: " + similarAnunt.getDescription());
-                    }
-                }
+            List<Anunt> similarAnunturi = anuntService.findSimilarAnunturi(
+                    anunt.getTipAnunt(), anunt.getOras(), anunt.getTip(), anunt.getCuloare(), anunt.getGen(), anunt.getRasa());
+
+            if (!similarAnunturi.isEmpty()) {
+                String jsonMessage = similarAnunturi.stream()
+                        .map(similar -> String.format("{\"title\":\"%s\", \"username\":\"%s\", \"email\":\"%s\"}", similar.getName(), similar.getUser().getUsername(), similar.getUser().getEmail()))
+                        .collect(Collectors.joining(", ", "[", "]"));
+                messagingTemplate.convertAndSend("/topic/notifications", jsonMessage);
             }
 
             return ResponseEntity.ok().body(savedAnunt);

@@ -6,17 +6,20 @@ import com.example.demo.repository.AnuntRepository;
 import jakarta.mail.MessagingException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class AnuntService {
     @Autowired
     private AnuntRepository anuntRepository;
 
+
     @Autowired
-    private EmailService emailService;
+    private SimpMessagingTemplate messagingTemplate;
 
     public List<Anunt> getAllAnunturi() {
         return anuntRepository.findAll();
@@ -80,25 +83,29 @@ public class AnuntService {
     }
 
     public List<Anunt> findSimilarAnunturi(String tipAnunt, String oras, String tip, String culoare, String gen, String rasa) {
-        return anuntRepository.findByTipAnuntAndOrasAndTipAndCuloareAndGenAndRasa(
-                tipAnunt, oras, tip, culoare, gen, rasa);
+        // Exemplu simplificat pentru a evalua similitudinea totală și parțială
+        List<Anunt> allAnunturi = anuntRepository.findByTipAnuntAndOrasAndTipAndCuloareAndGenAndRasa(tipAnunt, oras, tip, culoare, gen, rasa);
+        return allAnunturi.stream().filter(anunt -> {
+            int matchScore = 0;
+            if (anunt.getOras().equalsIgnoreCase(oras)) matchScore++;
+            if (anunt.getTip().equalsIgnoreCase(tip)) matchScore++;
+            if (anunt.getCuloare().equalsIgnoreCase(culoare)) matchScore++;
+            if (anunt.getGen().equalsIgnoreCase(gen)) matchScore++;
+            if (anunt.getRasa().equalsIgnoreCase(rasa)) matchScore++;
+            // Definim similitudinea totală ca având toate criteriile identice
+            return matchScore == 5;
+        }).collect(Collectors.toList());
     }
-
     public void checkAndNotifyForSimilarAnunt(Anunt anunt) {
         String tipAnuntOpposite = anunt.getTipAnunt().equals("pierdut") ? "gasit" : "pierdut";
-        List<Anunt> similarAnunturi = findSimilarAnunturi(tipAnuntOpposite, anunt.getOras(), anunt.getTip(), anunt.getCuloare(), anunt.getGen(), anunt.getRasa());
+        List<Anunt> similarAnunturi = anuntRepository.findByTipAnuntAndOrasAndTipAndCuloareAndGenAndRasa(
+                tipAnuntOpposite, anunt.getOras(), anunt.getTip(), anunt.getCuloare(), anunt.getGen(), anunt.getRasa());
 
         if (!similarAnunturi.isEmpty()) {
             for (Anunt similar : similarAnunturi) {
-                // Construct the HTML content
-                String htmlContent = "<h1>Similar Announcement Found!</h1>" +
-                        "<p>We have found a similar announcement that might interest you: <strong>" + similar.getName() + "</strong></p>";
-
-                try {
-                    emailService.sendHtmlEmail(anunt.getUser().getEmail(), "Similar Announcement Found", htmlContent);
-                } catch (MessagingException e) {
-                    e.printStackTrace();
-                }
+                String message = "S-a găsit un anunt similar cu titlul '" + similar.getName() +
+                        "' postat de utilizatorul '" + similar.getUser().getUsername() + "'.";
+                messagingTemplate.convertAndSend("/topic/notifications", message);
             }
         }
     }
