@@ -86,14 +86,12 @@ public class AnuntService {
         // Exemplu simplificat pentru a evalua similitudinea totală și parțială
         List<Anunt> allAnunturi = anuntRepository.findByTipAnuntAndOrasAndTipAndCuloareAndGenAndRasa(tipAnunt, oras, tip, culoare, gen, rasa);
         return allAnunturi.stream().filter(anunt -> {
-            int matchScore = 0;
-            if (anunt.getOras().equalsIgnoreCase(oras)) matchScore++;
-            if (anunt.getTip().equalsIgnoreCase(tip)) matchScore++;
-            if (anunt.getCuloare().equalsIgnoreCase(culoare)) matchScore++;
-            if (anunt.getGen().equalsIgnoreCase(gen)) matchScore++;
-            if (anunt.getRasa().equalsIgnoreCase(rasa)) matchScore++;
+            boolean matchOras = false, matchTip = false, matchCuloare = false;
+            if (anunt.getOras().equalsIgnoreCase(oras)) matchOras = true;
+            if (anunt.getTip().equalsIgnoreCase(tip)) matchTip = true;
+            if (anunt.getCuloare().equalsIgnoreCase(culoare)) matchCuloare = true;
             // Definim similitudinea totală ca având toate criteriile identice
-            return matchScore == 5;
+            return matchOras && matchTip && matchCuloare;
         }).collect(Collectors.toList());
     }
     public void checkAndNotifyForSimilarAnunt(Anunt anunt) {
