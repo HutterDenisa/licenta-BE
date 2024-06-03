@@ -43,10 +43,21 @@ public class AnuntService {
         }
     }
 
-    public Anunt toggleLike(Long id) throws NoAnuntFoundByIdException {
+    public Anunt toggleLike(Long id) {
         Anunt anunt = anuntRepository.findById(id)
                 .orElseThrow(() -> new NoAnuntFoundByIdException(HttpStatus.NOT_FOUND));
-        anunt.setNrLikes(anunt.getNrLikes() + 1);
+
+        int currentLikes = anunt.getNrLikes();
+        anunt.setNrLikes(currentLikes + 1); // Incrementă în mod implicit
+
+        // Verifică dacă utilizatorul a dat deja like și decide dacă trebuie să decrementeze
+        if (anunt.isLikedByCurrentUser()) {
+            anunt.setNrLikes(currentLikes - 1);
+        }
+
+        // Actualizează starea like-ului pentru utilizatorul curent
+        anunt.setLikedByCurrentUser(!anunt.isLikedByCurrentUser());
+
         return anuntRepository.save(anunt);
     }
 
