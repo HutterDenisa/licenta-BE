@@ -2,6 +2,7 @@ package com.example.demo.service;
 
 import com.example.demo.exceptions.NoAnuntFoundByIdException;
 import com.example.demo.model.Anunt;
+import com.example.demo.model.Statistica;
 import com.example.demo.repository.AnuntRepository;
 import jakarta.mail.MessagingException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,6 +21,9 @@ public class AnuntService {
 
     @Autowired
     private SimpMessagingTemplate messagingTemplate;
+
+    @Autowired
+    private StatisticaService statisticaService;
 
     public List<Anunt> getAllAnunturi() {
         return anuntRepository.findAll();
@@ -61,7 +65,20 @@ public class AnuntService {
         // Actualizează starea like-ului pentru utilizatorul curent
         anunt.setLikedByCurrentUser(!anunt.isLikedByCurrentUser());
 
-        return anuntRepository.save(anunt);
+        Anunt result = anuntRepository.save(anunt);
+
+        Statistica statistica = statisticaService.getByUserId(anunt.getUser().getId());
+        int totalLikes = 0;
+
+        List<Anunt> anunturi = this.getAnunturiByUserId(anunt.getUser().getId());
+
+        for(Anunt a: anunturi){
+            totalLikes += anunt.getNrLikes();
+        }
+
+        statisticaService.updateStatistica(statistica.getId(), totalLikes);
+
+        return result;
     }
 
     public List<Anunt> getAnunturiByUserId(Long userId) {
