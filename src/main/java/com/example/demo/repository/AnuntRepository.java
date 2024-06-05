@@ -25,7 +25,7 @@ public interface AnuntRepository extends JpaRepository<Anunt, Long> {
     @Query("SELECT u FROM Anunt u WHERE u.tipAnunt = :tipAnunt")
     List<Anunt> findByTipAnunt(String tipAnunt);
 
-    // In AnuntRepository.java
+
     @Query("SELECT u FROM Anunt u WHERE lower(u.name) LIKE lower(concat('%', :name, '%'))")
     List<Anunt> findByNameContaining(String name);
 
