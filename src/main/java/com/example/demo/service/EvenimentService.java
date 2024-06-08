@@ -4,7 +4,6 @@ import com.example.demo.exceptions.NoAnuntFoundByIdException;
 import com.example.demo.model.Anunt;
 import com.example.demo.model.Eveniment;
 import com.example.demo.model.Statistica;
-import com.example.demo.model.StatisticaEveniment;
 import com.example.demo.repository.AnuntRepository;
 import com.example.demo.repository.EvenimentRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,8 +17,6 @@ public class EvenimentService {
     @Autowired
     private EvenimentRepository evenimentRepository;
 
-    @Autowired
-    private StatisticaEvenimentService statisticaEvenimentService;
     public List<Eveniment> getAllEvenimente() {
         return evenimentRepository.findAll();
     }
@@ -54,16 +51,6 @@ public class EvenimentService {
 
         Eveniment result = evenimentRepository.save(eveniment);
 
-        StatisticaEveniment statistica = statisticaEvenimentService.getByUserId(eveniment.getUser().getId());
-        int totalLikes = 0;
-
-        List<Eveniment> evenimente = this.getEvenimenteByUserId(eveniment.getUser().getId());
-
-        for(Eveniment a: evenimente){
-            totalLikes += eveniment.getNrLikes();
-        }
-
-        statisticaEvenimentService.updateStatistica(statistica.getId(), totalLikes);
 
         return result;
     }
