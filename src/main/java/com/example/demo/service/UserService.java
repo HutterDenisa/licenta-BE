@@ -22,8 +22,6 @@ public class UserService {
     @Autowired
     private StatisticaService statisticaService;
 
-    @Autowired
-    private StatisticaEvenimentService statisticaEvenimentService;
     public List<User> getAllUsers(){
         return userRepository.findAll();
     }
@@ -45,7 +43,6 @@ public class UserService {
     public User saveUser(final User user) {
         User result = userRepository.save(user);
         statisticaService.saveStatistica(user);
-        statisticaEvenimentService.saveStatistica(user);
         return result;
     }
 

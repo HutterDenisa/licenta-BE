@@ -5,6 +5,7 @@ import com.example.demo.exceptions.NoAnuntFoundByIdException;
 import com.example.demo.model.Anunt;
 import com.example.demo.model.User;
 import com.example.demo.service.AnuntService;
+import com.example.demo.service.StatisticaService;
 import com.example.demo.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -41,6 +42,7 @@ public class AnuntController {
 
     @Autowired
     private SimpMessagingTemplate messagingTemplate;
+
 
     @CrossOrigin(origins = "http://localhost:63342")
     @GetMapping
@@ -99,6 +101,7 @@ public class AnuntController {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
     }
+
 
     @CrossOrigin(origins = "http://localhost:63342")
     @GetMapping("/userId/{userId}")

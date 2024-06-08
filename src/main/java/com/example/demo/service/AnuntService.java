@@ -2,9 +2,7 @@ package com.example.demo.service;
 
 import com.example.demo.exceptions.NoAnuntFoundByIdException;
 import com.example.demo.model.Anunt;
-import com.example.demo.model.Statistica;
 import com.example.demo.repository.AnuntRepository;
-import jakarta.mail.MessagingException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -18,12 +16,12 @@ public class AnuntService {
     @Autowired
     private AnuntRepository anuntRepository;
 
+    // Eliminăm referința la StatisticaService
+     @Autowired
+     private StatisticaService statisticaService;
 
     @Autowired
     private SimpMessagingTemplate messagingTemplate;
-
-    @Autowired
-    private StatisticaService statisticaService;
 
     public List<Anunt> getAllAnunturi() {
         return anuntRepository.findAll();
@@ -55,30 +53,23 @@ public class AnuntService {
                 .orElseThrow(() -> new NoAnuntFoundByIdException(HttpStatus.NOT_FOUND));
 
         int currentLikes = anunt.getNrLikes();
-        anunt.setNrLikes(currentLikes + 1); // Incrementă în mod implicit
-
-        // Verifică dacă utilizatorul a dat deja like și decide dacă trebuie să decrementeze
+        int likeChange = 0;
         if (anunt.isLikedByCurrentUser()) {
             anunt.setNrLikes(currentLikes - 1);
+            likeChange = -1;
+        } else {
+            anunt.setNrLikes(currentLikes + 1);
+            likeChange = 1;
         }
 
-        // Actualizează starea like-ului pentru utilizatorul curent
         anunt.setLikedByCurrentUser(!anunt.isLikedByCurrentUser());
-
-        Anunt result = anuntRepository.save(anunt);
-
-        Statistica statistica = statisticaService.getByUserId(anunt.getUser().getId());
-        int totalLikes = 0;
+        Anunt updatedAnunt = anuntRepository.save(anunt);
 
         List<Anunt> anunturi = this.getAnunturiByUserId(anunt.getUser().getId());
 
-        for(Anunt a: anunturi){
-            totalLikes += anunt.getNrLikes();
-        }
-
-        statisticaService.updateStatistica(statistica.getId(), totalLikes);
-
-        return result;
+        // Update statistics
+        statisticaService.changeStatistica(anunt.getUser().getId(), likeChange, anunturi);
+        return updatedAnunt;
     }
 
     public List<Anunt> getAnunturiByUserId(Long userId) {
@@ -111,6 +102,7 @@ public class AnuntService {
             return matchOras && matchTip && matchCuloare;
         }).collect(Collectors.toList());
     }
+
     public void checkAndNotifyForSimilarAnunt(Anunt anunt) {
         String tipAnuntOpposite = anunt.getTipAnunt().equals("pierdut") ? "gasit" : "pierdut";
         List<Anunt> similarAnunturi = anuntRepository.findByTipAnuntAndOrasAndTipAndCuloareAndGenAndRasa(
