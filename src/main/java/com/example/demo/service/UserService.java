@@ -2,6 +2,7 @@ package com.example.demo.service;
 
 import com.example.demo.exceptions.NoUserFoundByIdException;
 import com.example.demo.exceptions.NoUserFoundException;
+import com.example.demo.model.Anunt;
 import com.example.demo.model.Statistica;
 import com.example.demo.model.User;
 import com.example.demo.repository.StatisticaRepository;
@@ -24,6 +25,10 @@ public class UserService {
 
     public List<User> getAllUsers(){
         return userRepository.findAll();
+    }
+
+    public List<User> findByNameContaining(String name) {
+        return userRepository.findByNameContaining(name);
     }
 
     public User getUserById (final Long id) {

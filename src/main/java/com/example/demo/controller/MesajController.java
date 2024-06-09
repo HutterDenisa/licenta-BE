@@ -25,4 +25,5 @@ public class MesajController {
     public Mesaj createMesaj(@RequestParam("userId") Long userId, @RequestParam("mesaj") String mesaj) {
         return mesajService.saveMesaj(userId, mesaj);
     }
+
 }

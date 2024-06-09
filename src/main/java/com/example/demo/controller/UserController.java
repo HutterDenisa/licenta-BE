@@ -1,5 +1,6 @@
 package com.example.demo.controller;
 
+import com.example.demo.model.Anunt;
 import com.example.demo.model.User;
 import com.example.demo.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -80,5 +81,14 @@ public class UserController {
         return userService.saveUser(user);
     }
 
+    @CrossOrigin(origins = "http://localhost:63342")
+    @GetMapping("/search/{name}")
+    public ResponseEntity<List<User>> searchUserByName(@PathVariable String name) {
+        List<User> results = userService.findByNameContaining(name);
+        if(results.isEmpty()) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+        return new ResponseEntity<>(results, HttpStatus.OK);
+    }
 
 }
