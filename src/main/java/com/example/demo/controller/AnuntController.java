@@ -103,6 +103,7 @@ public class AnuntController {
     }
 
 
+
     @CrossOrigin(origins = "http://localhost:63342")
     @GetMapping("/userId/{userId}")
     public List<Anunt> getAnuntByUserId (@PathVariable Long userId) {

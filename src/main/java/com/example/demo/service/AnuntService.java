@@ -53,24 +53,24 @@ public class AnuntService {
                 .orElseThrow(() -> new NoAnuntFoundByIdException(HttpStatus.NOT_FOUND));
 
         int currentLikes = anunt.getNrLikes();
-        int likeChange = 0;
         if (anunt.isLikedByCurrentUser()) {
             anunt.setNrLikes(currentLikes - 1);
-            likeChange = -1;
         } else {
             anunt.setNrLikes(currentLikes + 1);
-            likeChange = 1;
         }
 
         anunt.setLikedByCurrentUser(!anunt.isLikedByCurrentUser());
         Anunt updatedAnunt = anuntRepository.save(anunt);
 
-        List<Anunt> anunturi = this.getAnunturiByUserId(anunt.getUser().getId());
-
         // Update statistics
-        statisticaService.changeStatistica(anunt.getUser().getId(), likeChange, anunturi);
+        List<Anunt> anunturi = this.getAnunturiByUserId(anunt.getUser().getId());
+        System.out.println("Calling changeStatistica for userId: " + anunt.getUser().getId());
+        statisticaService.changeStatistica(anunt.getUser().getId(), anunt.getNrLikes(), anunturi);
+
         return updatedAnunt;
     }
+
+
 
     public List<Anunt> getAnunturiByUserId(Long userId) {
         return anuntRepository.findByUserId(userId);

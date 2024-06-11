@@ -35,6 +35,8 @@ public class StatisticaService {
         Statistica statistica = statisticaRepository.findById(id)
                 .orElseThrow(() -> new NoAnuntFoundByIdException(HttpStatus.NOT_FOUND));
 
+        System.out.println("Updating statistica with id: " + id + " and act: " + act);
+
         statistica.setAct1(statistica.getAct2());
         statistica.setAct2(statistica.getAct3());
         statistica.setAct3(statistica.getAct4());
@@ -57,24 +59,36 @@ public class StatisticaService {
         statistica.setT9(statistica.getT10());
         statistica.setT10(LocalDateTime.now());
 
-        return statisticaRepository.save(statistica);
+        Statistica updatedStatistica = statisticaRepository.save(statistica);
+        System.out.println("Updated statistica: " + updatedStatistica);
+
+        return updatedStatistica;
     }
+
 
     // Public method to update statistics externally
     public void changeStatistica(Long userId, int likeChange, List<Anunt> anunturi) {
         Statistica statistica = this.getByUserId(userId);
-        int totalLikes = 0;
+        if (statistica == null) {
+            System.err.println("Statistica not found for userId: " + userId);
+            return;
+        }
 
-     //   List<Anunt> anunturi = anuntService.getAnunturiByUserId(userId);
+        int totalLikes = 0;
         for (Anunt a : anunturi) {
             totalLikes += a.getNrLikes();
         }
 
-        this.updateStatistica(statistica.getId(), totalLikes);
-
-        // Update like activity in statistics
-        updateLikeActivity(statistica, likeChange);
+        System.out.println("Updating statistica for userId: " + userId + " with totalLikes: " + totalLikes);
+        try {
+            this.updateStatistica(statistica.getId(), totalLikes);
+            updateLikeActivity(statistica, likeChange);
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.err.println("Error updating statistica for userId: " + userId);
+        }
     }
+
 
     // Method to update like activity in statistics
     private void updateLikeActivity(Statistica statistica, int likeChange) {
