@@ -81,10 +81,9 @@ public class AnuntController {
     @CrossOrigin(origins = "http://localhost:63342")
     @GetMapping("/image/{imageName}")
     public ResponseEntity<Resource> getImage(@PathVariable String imageName) throws IOException {
-        // Construiește calea completă a imaginii
+
         String imagePath = uploadDirectory + "/" + imageName;
 
-        // Încarcă imaginea și returnează-o sub formă de răspuns
         Resource imageResource = new FileSystemResource(imagePath);
         return ResponseEntity.ok()
                 .contentType(MediaType.IMAGE_PNG) // sau MediaType.IMAGE_PNG, în funcție de tipul imaginilor
@@ -117,16 +116,11 @@ public class AnuntController {
             Anunt existingAnunt = anuntService.getAnuntById(id);
             if (existingAnunt != null) {
                 System.out.println("Solicitarea a ajuns în editAnunt cu id: " + id);
-                // Actualizează detaliile anunțului cu noile informații primite în corpul cererii
+
                 existingAnunt.setName(updatedAnunt.getName());
                 existingAnunt.setDescription(updatedAnunt.getDescription());
-                // Alte câmpuri pentru actualizare
 
-                // Salvează anunțul actualizat în baza de date
                 Anunt savedAnunt = anuntService.saveAnunt(existingAnunt);
-
-                //HttpHeaders headers = new HttpHeaders();
-                //headers.add("Access-Control-Allow-Origin", "http://127.0.0.1:5500");
 
                 return ResponseEntity.ok()
                         .body(savedAnunt);
@@ -184,7 +178,7 @@ public class AnuntController {
             anunt.setVarsta(varsta);
             anunt.setTip(tip);
 
-            // Salvează imaginea și actualizează calea în obiectul Anunt
+
             String imagePath1 = saveImage(image1);
             anunt.setImagePath1(imagePath1);
             User user = userService.getUserById(userId);
@@ -193,7 +187,7 @@ public class AnuntController {
             anunt.setUser(user);
             System.out.println(anunt);
 
-            // Salvează obiectul Anunt în baza de date
+
             Anunt savedAnunt = anuntService.saveAnunt(anunt);
 
             List<Anunt> similarAnunturi = anuntService.findSimilarAnunturi(
@@ -208,32 +202,31 @@ public class AnuntController {
 
             return ResponseEntity.ok().body(savedAnunt);
         } catch (IOException e) {
-            // Tratează eroarea în mod corespunzător
+
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         } catch (Exception e) {
-            // Dacă există o altă problemă, tratează-o aici
+
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 
     private String saveImage(MultipartFile image) throws IOException {
-        // Generează un nume unic pentru imagine
+
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMdd_HHmmss");
         String imageName = dateFormat.format(new Date()) + "_" + image.getOriginalFilename();
 
-        // Construiește calea completă a imaginii
+
         String imagePath = uploadDirectory + "/" + imageName;
 
-        // Salvează imaginea pe disc
+
         Path destination = Paths.get(imagePath);
         Files.copy(image.getInputStream(), destination, StandardCopyOption.REPLACE_EXISTING);
 
         return imagePath;
     }
 
-    // In AnuntController.java
     @CrossOrigin(origins = "http://localhost:63342")
     @GetMapping("/search/{name}")
     public ResponseEntity<List<Anunt>> searchAnuntByName(@PathVariable String name) {

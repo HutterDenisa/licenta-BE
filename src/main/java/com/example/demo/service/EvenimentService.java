@@ -41,12 +41,12 @@ public class EvenimentService {
         int currentLikes = eveniment.getNrLikes();
         eveniment.setNrLikes(currentLikes + 1); // Incrementă în mod implicit
 
-        // Verifică dacă utilizatorul a dat deja like și decide dacă trebuie să decrementeze
+
         if (eveniment.isLikedByCurrentUser()) {
             eveniment.setNrLikes(currentLikes - 1);
         }
 
-        // Actualizează starea like-ului pentru utilizatorul curent
+
         eveniment.setLikedByCurrentUser(!eveniment.isLikedByCurrentUser());
 
         Eveniment result = evenimentRepository.save(eveniment);

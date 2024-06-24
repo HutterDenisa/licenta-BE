@@ -33,15 +33,14 @@ public class UserController {
 
     @PostMapping("/login")
     public ResponseEntity<Map<String, Object>> loginUser(@RequestBody User loginUser) {
-        // Verifică credențialele utilizatorului
+
         User existingUser = userService.getUserByEmail(loginUser.getEmail());
         System.out.println("login");
         if (existingUser != null && existingUser.getPassword().equals(loginUser.getPassword())) {
-            // Autentificare reușită
+
             System.out.println("in if");
             String token = generateToken(existingUser.getId());
 
-            // Returnează un obiect JSON care conține token și userId
             Map<String, Object> response = new HashMap<>();
             response.put("token", token);
             response.put("userId", existingUser.getId());
@@ -49,7 +48,7 @@ public class UserController {
             System.out.println("Conectare reușită! User ID: " + existingUser.getId());
             return ResponseEntity.ok(response);
         } else {
-            // Autentificare eșuată
+
             System.out.println("in else");
             System.out.println("Eșec la conectare. User: " + loginUser.getEmail() + ", Password: " + loginUser.getPassword());
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Collections.singletonMap("error", "Email sau parolă incorecte."));        }

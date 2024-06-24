@@ -16,7 +16,6 @@ public class AnuntService {
     @Autowired
     private AnuntRepository anuntRepository;
 
-    // Eliminăm referința la StatisticaService
      @Autowired
      private StatisticaService statisticaService;
 
@@ -62,7 +61,7 @@ public class AnuntService {
         anunt.setLikedByCurrentUser(!anunt.isLikedByCurrentUser());
         Anunt updatedAnunt = anuntRepository.save(anunt);
 
-        // Update statistics
+
         List<Anunt> anunturi = this.getAnunturiByUserId(anunt.getUser().getId());
         System.out.println("Calling changeStatistica for userId: " + anunt.getUser().getId());
         statisticaService.changeStatistica(anunt.getUser().getId(), anunt.getNrLikes(), anunturi);
@@ -91,14 +90,14 @@ public class AnuntService {
     }
 
     public List<Anunt> findSimilarAnunturi(String tipAnunt, String oras, String tip, String culoare, String gen, String rasa) {
-        // Exemplu simplificat pentru a evalua similitudinea totală și parțială
+
         List<Anunt> allAnunturi = anuntRepository.findByTipAnuntAndOrasAndTipAndCuloareAndGenAndRasa(tipAnunt, oras, tip, culoare, gen, rasa);
         return allAnunturi.stream().filter(anunt -> {
             boolean matchOras = false, matchTip = false, matchCuloare = false;
             if (anunt.getOras().equalsIgnoreCase(oras)) matchOras = true;
             if (anunt.getTip().equalsIgnoreCase(tip)) matchTip = true;
             if (anunt.getCuloare().equalsIgnoreCase(culoare)) matchCuloare = true;
-            // Definim similitudinea totală ca având toate criteriile identice
+
             return matchOras && matchTip && matchCuloare;
         }).collect(Collectors.toList());
     }

@@ -17,9 +17,7 @@ public class StatisticaService {
     @Autowired
     private StatisticaRepository statisticaRepository;
 
-    // Eliminăm referința la AnuntService
-    // @Autowired
-    // private AnuntService anuntService;
+
 
     public Statistica getByUserId(long userId) {
         return statisticaRepository.findByUserId(userId);
@@ -66,7 +64,6 @@ public class StatisticaService {
     }
 
 
-    // Public method to update statistics externally
     public void changeStatistica(Long userId, int likeChange, List<Anunt> anunturi) {
         Statistica statistica = this.getByUserId(userId);
         if (statistica == null) {
@@ -90,7 +87,7 @@ public class StatisticaService {
     }
 
 
-    // Method to update like activity in statistics
+
     private void updateLikeActivity(Statistica statistica, int likeChange) {
         int newAct10 = statistica.getAct10() + likeChange;
         newAct10 = Math.max(newAct10, 0);

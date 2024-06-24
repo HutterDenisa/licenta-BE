@@ -66,10 +66,9 @@ public class EvenimentController {
     @CrossOrigin(origins = "http://localhost:63342")
     @GetMapping("/image/{imageName}")
     public ResponseEntity<Resource> getImage(@PathVariable String imageName) throws IOException {
-        // Construiește calea completă a imaginii
+
         String imagePath = uploadDirectory + "/" + imageName;
 
-        // Încarcă imaginea și returnează-o sub formă de răspuns
         Resource imageResource = new FileSystemResource(imagePath);
         return ResponseEntity.ok()
                 .contentType(MediaType.IMAGE_PNG) // sau MediaType.IMAGE_PNG, în funcție de tipul imaginilor
@@ -100,16 +99,11 @@ public class EvenimentController {
             Eveniment existingEveniment = evenimentService.getEvenimentById(id);
             if (existingEveniment != null) {
                 System.out.println("Solicitarea a ajuns în editAnunt cu id: " + id);
-                // Actualizează detaliile anunțului cu noile informații primite în corpul cererii
+
                 existingEveniment.setName(updatedEveniment.getName());
                 existingEveniment.setDescription(updatedEveniment.getDescription());
-                // Alte câmpuri pentru actualizare
 
-                // Salvează anunțul actualizat în baza de date
                 Eveniment savedEveniment = evenimentService.saveEveniment(existingEveniment);
-
-                //HttpHeaders headers = new HttpHeaders();
-                //headers.add("Access-Control-Allow-Origin", "http://127.0.0.1:5500");
 
                 return ResponseEntity.ok()
                         .body(savedEveniment);
@@ -154,7 +148,6 @@ public class EvenimentController {
             eveniment.setDescription(description);
 
 
-            // Salvează imaginea și actualizează calea în obiectul Anunt
             String imagePath1 = saveImage(image1);
             eveniment.setImagePath1(imagePath1);
             User user = userService.getUserById(userId);
@@ -163,38 +156,34 @@ public class EvenimentController {
             eveniment.setUser(user);
             System.out.println(eveniment);
 
-            // Salvează obiectul Anunt în baza de date
             Eveniment savedEveniment = evenimentService.saveEveniment(eveniment);
 
 
             return ResponseEntity.ok().body(savedEveniment);
         } catch (IOException e) {
-            // Tratează eroarea în mod corespunzător
+
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         } catch (Exception e) {
-            // Dacă există o altă problemă, tratează-o aici
+
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 
     private String saveImage(MultipartFile image) throws IOException {
-        // Generează un nume unic pentru imagine
+
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMdd_HHmmss");
         String imageName = dateFormat.format(new Date()) + "_" + image.getOriginalFilename();
 
-        // Construiește calea completă a imaginii
         String imagePath = uploadDirectory + "/" + imageName;
 
-        // Salvează imaginea pe disc
         Path destination = Paths.get(imagePath);
         Files.copy(image.getInputStream(), destination, StandardCopyOption.REPLACE_EXISTING);
 
         return imagePath;
     }
 
-    // In AnuntController.java
     @CrossOrigin(origins = "http://localhost:63342")
     @GetMapping("/search/{name}")
     public ResponseEntity<List<Eveniment>> searchEvenimentByName(@PathVariable String name) {
